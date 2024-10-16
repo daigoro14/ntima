@@ -18,20 +18,30 @@ let users = {};
 
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
-
+    socket.on('connect_user', (deviceId) => {
+        console.log(`User connected with device ID: ${deviceId}`);
+    });
    
     socket.on('locationUpdate', (data) => {
-        users[socket.id] = data;
+        console.log('Location update:', data, socket.id);
+        users[socket.id] = {
+            ...data,
+        };
 
-        socket.broadcast.emit('userLocations', {
-            id: socket.id,
-            location: data,
-        });
+        const sortedUsers = Object.keys(users)
+            .map(userId => ({
+                id: userId,
+                data: users[userId]
+            }))
+            .sort((a, b) => new Date(b.data.alertDate) - new Date(a.data.alertDate)); 
+
+        socket.broadcast.emit('userLocations', sortedUsers);
     });
 
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
         delete users[socket.id];
+        socket.broadcast.emit('userDisconnected', socket.id);
     });
 });
 

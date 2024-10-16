@@ -6,9 +6,14 @@ import Navigation from '@/components/Navigation';
 import * as Location from 'expo-location';
 import Warning from 'react-native-vector-icons/Entypo';
 import io from 'socket.io-client';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+type MapScreenProps = {
+  navigation: NativeStackNavigationProp<any, any>;
+};
 
 
-export default function MapScreen({ navigation }) {
+export default function MapScreen({ navigation }: MapScreenProps) {
   
   const [location, setLocation] = useState<any>(null);
   const [errorMsg, setErrorMsg] = useState<String | null>(null);
@@ -158,7 +163,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '50%',
     left: '50%',
-    marginLeft: -20,
+    marginLeft: -17,
     marginTop: -20,
   },
   pulse: {
