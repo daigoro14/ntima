@@ -7,25 +7,45 @@ import * as Location from 'expo-location';
 import Warning from 'react-native-vector-icons/Entypo';
 import io from 'socket.io-client';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RouteProp } from '@react-navigation/native';
+
+
+type RootStackParamList = {
+  MapScreen: { userId: string, location: { latitude: number, longitude: number } };
+};
 
 type MapScreenProps = {
   navigation: NativeStackNavigationProp<any, any>;
+  route: RouteProp<RootStackParamList, 'MapScreen'>;
 };
 
-
-export default function MapScreen({ navigation }: MapScreenProps) {
+export default function MapScreen({ navigation, route }: MapScreenProps) {
   
-  const [location, setLocation] = useState<any>(null);
+  const [myLocation, setMyLocation] = useState<any>(null);
+  const [alertLocation, setAlertLocation] = useState<any>(null);
   const [errorMsg, setErrorMsg] = useState<String | null>(null);
   const pulseAnimation = useRef(new Animated.Value(0)).current;
 
   const socket = useRef(io('http://192.168.1.165:8080' || 'http://localhost:8080')).current;
 
+  const { userId } = route.params;
+
+
   useEffect(() => {
-    if (location) {
-      socket.emit('locationUpdate', location);
-    }
-  }, [location]);
+    socket.emit('subscribeToUser', userId); 
+
+    socket.on('userLocationUpdate', (locationData) => {
+      if (locationData.userId === userId) {
+        setAlertLocation(locationData.location);
+        console.log('Alert location:', alertLocation.location.latitude);
+      }
+    });
+
+    return () => {
+      socket.off('userLocationUpdate');
+    };
+  }, [userId]);
+
 
   useEffect(() => {
     const pulse = () => {
@@ -71,7 +91,7 @@ export default function MapScreen({ navigation }: MapScreenProps) {
           distanceInterval: 1,
         },
         (newLocation) => {
-          setLocation(newLocation.coords);
+          setMyLocation(newLocation.coords);
           // console.log(newLocation.coords);
         }
       );
@@ -84,24 +104,26 @@ export default function MapScreen({ navigation }: MapScreenProps) {
     getLocationAsync();
   }, []);
 
+  // console.log('My location:', alertLocation);
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.mapContainer}>
-        {location ?
+        {myLocation ?
           <MapView
             style={styles.map}
             initialRegion={{
-              latitude: location.latitude,
-              longitude: location.longitude,
+              latitude: myLocation.latitude,
+              longitude: myLocation.longitude,
               latitudeDelta: 0.1,
               longitudeDelta: 0.1,
             }}
           >
+          { alertLocation &&
             <Marker
               coordinate={{
-                latitude: location.latitude,
-                longitude: location.longitude
+                latitude: alertLocation.location.latitude,
+                longitude: alertLocation.location.longitude
               }}
             >
               <Animated.View
@@ -114,14 +136,19 @@ export default function MapScreen({ navigation }: MapScreenProps) {
                   },
                 ]}
               />
-              <Warning 
-                name="warning" 
+              <Warning
+                name="warning"
                 style={styles.alertedUserLocation}
               />
             </Marker>
+          }
             <Marker
               // coordinate={{ latitude: 37.33182081, longitude: -122.03038642 }}
-              coordinate={{ latitude: 59.47577767320275, longitude: 17.89949405665813 }}
+              // coordinate={{ latitude: 59.47577767320275, longitude: 17.89949405665813 }}
+              coordinate={{
+                latitude: myLocation.latitude,
+                longitude: myLocation.longitude
+              }}
               description={"This is a marker in React Natve"}
             >
               <View style={styles.yourLocation} />

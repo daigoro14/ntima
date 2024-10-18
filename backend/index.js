@@ -36,6 +36,20 @@ io.on('connection', (socket) => {
             .sort((a, b) => new Date(b.data.alertDate) - new Date(a.data.alertDate)); 
 
         socket.broadcast.emit('userLocations', sortedUsers);
+
+        const specificUserId = socket.id;  // Or use a deviceId if that's unique per user
+        io.to(specificUserId).emit('userLocationUpdate', { userId: specificUserId, location: users[socket.id] });
+    });
+  
+    socket.on('subscribeToUser', (userId) => {
+        console.log(`Client ${socket.id} is subscribing to user: ${userId}`);
+
+        socket.join(userId);
+
+        const userLocation = users[userId];
+        if (userLocation) {
+            socket.emit('userLocationUpdate', { userId, location: userLocation });
+        }
     });
 
     socket.on('disconnect', () => {

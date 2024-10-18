@@ -43,8 +43,6 @@ export default function AlertListScreen({ navigation }: AlertListScreenProps) {
             socket.current = io(serverUrl);
 
             socket.current.on('userLocations', (data) => {
-                console.log('Received user location data:', data);
-
                 setUserLocations(data); 
             });
         }
@@ -65,20 +63,32 @@ export default function AlertListScreen({ navigation }: AlertListScreenProps) {
         };
     }, [])
   
+    const navigateToAlert = (user: UserLocation) => {
+      navigation.navigate('Map', { userId: user.id, location: user.data.location });
+    };
+  
   return (
   <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         {userLocations.map((user) => (
           user.data.alert === 'Emergency' ? (
-            <View key={user.id} style={[styles.listItem, { backgroundColor: '#f05757' }]}>
+            <TouchableOpacity
+              key={user.id}
+              style={[styles.listItem, { backgroundColor: '#f05757' }]}
+              onPress={() => navigateToAlert(user)}
+            >
               <EmergencyIcon name="alarm-bell" style={[styles.listIcon, {color: 'white'}]}/>
               <Text style={styles.dateText}>Alerta de: {user.data.alertDate}</Text>
-            </View>
+            </TouchableOpacity>
           ): (
-            <View key={user.id} style={[styles.listItem, {backgroundColor: '#ffea00'}]}>
+            <TouchableOpacity 
+              key={user.id} 
+              style={[styles.listItem, {backgroundColor: '#ffea00'}]}
+              onPress={() => navigateToAlert(user)}
+            >
               <RiskIcon name="warning" style={[styles.listIcon]}/>
               <Text style={styles.dateText}> Alerta de: {user.data.alertDate}</Text>
-            </View>
+            </TouchableOpacity>
           )
         ))}
       </ScrollView>
